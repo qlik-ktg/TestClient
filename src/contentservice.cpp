@@ -49,23 +49,23 @@ pplx::task<utility::string_t> ContentService::GetBlobUUID(
     http_request request;
     request.set_method(web::http::methods::POST);
     request.set_request_uri(web::uri(U("/blob")));
-    request.headers().set_content_type(U("application/json"));
+    request.headers().set_content_type(U("application/vnd.api+json"));
     request.set_body(jsonBlob);
 
     return client.request(request)
     .then(
         [errorFunc](http_response response) -> pplx::task<web::json::value> {
             if (response.status_code() == status_codes::Created) {
-                return response.extract_json();
+                return response.extract_json(true); // ignore content-type
             }
 
             return pplx::task_from_result (web::json::value());
         }
     ).then(
         [errorFunc](pplx::task<web::json::value> jsonResponse) -> pplx::task<utility::string_t> {
-            const auto& input = jsonResponse.get();
-            if (!input.is_null()) {
-                try {
+            try {
+                const auto& input = jsonResponse.get();
+                if (!input.is_null()) {
                     auto responseData = input.at(U("data")).as_object();
                     utility::string_t id = responseData.at(U("id")).serialize();
                     id.pop_back();
@@ -73,13 +73,13 @@ pplx::task<utility::string_t> ContentService::GetBlobUUID(
 
                     return pplx::task_from_result(id);
                 }
-                catch (web::json::json_exception const& e) {
-                    errorFunc(e.what());
-                }
-                catch (http_exception const &e) {
-                    // handle error
-                    errorFunc(e.what());
-                }
+            }
+            catch (web::json::json_exception const& e) {
+                errorFunc(e.what());
+            }
+            catch (http_exception const &e) {
+                // handle error
+                errorFunc(e.what());
             }
 
             return pplx::task_from_result(utility::string_t());
@@ -109,7 +109,7 @@ pplx::task<int64_t> ContentService::GetBlobContentLength(
     return client.request(requestBlob).then(
     [wErrorFunc](pplx::task<web::http::http_response> previousTask) -> pplx::task<int64_t> {
         const auto& response = previousTask.get();
-        const auto& responseJSON = response.extract_json().get();
+        const auto& responseJSON = response.extract_json(true).get();
 
         int64_t dataLength = -1;
         try {
@@ -178,7 +178,7 @@ pplx::task<web::json::value> ContentService::UploadAsync(
                             fileStream.close();
 
                             auto response = previousTask.get();
-                            auto jsonResponse = response.extract_json().get();
+                            auto jsonResponse = response.extract_json().get(); // ignore content-type
                             if (response.status_code() != status_codes::OK) {
                                 auto jsonResult = jsonResponse.serialize().c_str();
                                 wErrorFunc(jsonResult);

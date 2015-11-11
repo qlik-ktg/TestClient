@@ -1,13 +1,13 @@
 {
 	"server": "http://127.0.0.1",
 	"port": 8080,
-	"numInstances": 2,
+	"numInstances": 5,
 	"dataPath" : "g://Data//testclient",
 	"scenario" : {
 		"type": 0,
 		"files": [
 			{
-				"file": "10MB.bin"
+				"file": "100MB.bin"
 			}
 		]
 	}

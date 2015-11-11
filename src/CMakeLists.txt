@@ -30,12 +30,12 @@ set(SOURCES
 SET(ADDITIONAL_LIBRARIES ${CASABLANCA_LIBRARY} ${Boost_LIBRARIES})
 
 LINK_DIRECTORIES($ENV{BOOST_LIBDIR})
-MESSAGE("BOOST_LIBDIR = $ENV{BOOST_LIBDIR}")
+#MESSAGE("BOOST_LIBDIR = $ENV{BOOST_LIBDIR}")
 
 add_executable(testcpprestsdkmain ${SOURCES} ${HEADERS})
 target_link_libraries(testcpprestsdkmain ${ADDITIONAL_LIBRARIES})
 
-MESSAGE("Boost_LIBRARIES = ${Boost_LIBRARIES}")
+#MESSAGE("Boost_LIBRARIES = ${Boost_LIBRARIES}")
 
 
 cotire(testcpprestsdkmain)

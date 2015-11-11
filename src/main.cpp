@@ -117,9 +117,10 @@ int TestUploadThreads(const std::vector<utility::string_t>& dataFiles, const uti
         for (auto j = 0; j < dataFiles.size(); ++j) {
             auto dataFile = dataFiles[j];
             tg.run(
-                [=]() -> utility::string_t {
-                return TestUpload(dataFile, server, port, i);
-            });
+                [dataFile,server,port,i]() -> utility::string_t {
+                    return TestUpload(dataFile, server, port, i);
+                }
+            );
         }
     }
     tg.wait();
@@ -133,6 +134,7 @@ int TestUploadAndDownloadThreads(const std::vector<utility::string_t>& dataFiles
     pplx::task_group tg;
 
     // upload files
+    auto totalTask = numTasks*dataFiles.size();
     std::vector<pplx::task<utility::string_t>> uploadTasks;
     for (auto i = 0; i < numTasks; ++i) {
         for (auto j = 0; j < dataFiles.size(); ++j) {
@@ -146,12 +148,12 @@ int TestUploadAndDownloadThreads(const std::vector<utility::string_t>& dataFiles
         }
     }
 
-    auto pUploadUUIDs = std::make_shared<std::vector<utility::string_t>>(std::vector<utility::string_t>());
+    auto pUploadUUIDs = std::make_shared<std::vector<utility::string_t>>(std::vector<utility::string_t>(totalTask));
     auto joinUploadTasks = when_all(begin(uploadTasks), end(uploadTasks)).then(
         [pUploadUUIDs](std::vector<utility::string_t> uploadResults) {
             for (auto i = 0; i < uploadResults.size(); ++i) {
                 const auto& uuid = uploadResults[i];
-                pUploadUUIDs->push_back(uuid);
+                (*pUploadUUIDs)[i] = uuid;
 
                 //std::wcout << U("uuid = ") << uuid << std::endl;
             }
@@ -186,7 +188,7 @@ int main(int argc, char** argv) {
         cout << "Usage:" << endl
             << "TestClient <config_file> <testMode>" 
             << endl
-            << "testMode: 0 = upload, 1 = download, 2 = upload and download"
+            << "testMode: 0 = upload, 1 = download, 2 = upload and download, 3 = upload and download to buffer"
             << endl;
         return -1;
     }
